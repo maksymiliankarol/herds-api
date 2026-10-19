@@ -1,0 +1,37 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "herds-api",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-10-16",
+	"observability": { "enabled": true },
+	"routes": [{ "pattern": "herds-api.metalogrom.com", "custom_domain": true }],
+	"vars": {	"WEB_URL": "http://localhost:5173"},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "ROOM",
+				"class_name": "Room"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"Room"
+			]
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "herds_db",
+			"database_name": "herds-db",
+			"database_id": "b74c8ca0-b368-4eaf-9242-8b0eea09a2aa"
+		}
+	],
+	"ratelimits": [
+		{ 
+			"name": "WS_LIMITER",    "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } },
+		{ "name": "ADMIN_LIMITER", "namespace_id": "1002", "simple": { "limit": 20, "period": 60 } }
+	]
+}
