@@ -3,7 +3,7 @@ import { clientKey } from "../lib/client";
 import type { AppEnv } from "../lib/env";
 import { findRoomId, roomStub } from "../lib/rooms";
 import { rejectUpgrade } from "../lib/ws";
-import { verifyTurnstile } from "../turnstile";
+import { verifyTurnstile } from "../lib/turnstile";
 
 const CLOSE_VERIFICATION_FAILED = 4403;
 
@@ -19,7 +19,7 @@ wsRoutes.get("/cities/:city/rooms/:slug/ws", async (c) => {
 
   // CORS doesn't protect WebSockets, so check the Origin yourself
   const origin = c.req.header("Origin");
-  if (origin && origin !== c.env.WEB_URL) return c.text("Forbidden", 403);
+  if (origin && origin !== new URL(c.env.WEB_URL).origin) return c.text("Forbidden", 403);
 
   // a Turnstile token is single-use, so every connect needs a fresh one
   if (!c.env.TURNSTILE_SECRET) return c.text("Not configured", 500); // fail closed

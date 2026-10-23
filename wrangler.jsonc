@@ -5,7 +5,7 @@
 	"compatibility_date": "2026-10-16",
 	"observability": { "enabled": true },
 	"routes": [{ "pattern": "herds-api.metalogrom.com", "custom_domain": true }],
-	"vars": {	"WEB_URL": "http://localhost:5173"},
+	"vars": { "WEB_URL": "https://herds.metalogrom.com" },
 	"durable_objects": {
 		"bindings": [
 			{
@@ -26,7 +26,8 @@
 		{
 			"binding": "herds_db",
 			"database_name": "herds-db",
-			"database_id": "b74c8ca0-b368-4eaf-9242-8b0eea09a2aa"
+			"database_id": "b74c8ca0-b368-4eaf-9242-8b0eea09a2aa",
+			"migrations_dir": "db/migrations"
 		}
 	],
 	"ratelimits": [

@@ -20,8 +20,7 @@ node_modules/
 .env.production
 .dev.vars
 
-# dev
-DEV.md
+# todo
 TODO.md
 
 # logs

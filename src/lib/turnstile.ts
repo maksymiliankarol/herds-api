@@ -11,7 +11,12 @@ export async function verifyTurnstile(token: string, secret: string, ip?: string
   if (ip) body.append("remoteip", ip);
 
   try {
-    const res = await fetch(SITEVERIFY_URL, { method: "POST", body });
+    const res = await fetch(SITEVERIFY_URL, {
+      method: "POST",
+      body,
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) throw new Error(`siteverify returned ${res.status}`);
     const result = (await res.json()) as SiteverifyResponse;
 
     if (!result.success) console.warn("turnstile rejected:", result["error-codes"]);

@@ -1,4 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
+import { isReservedName } from "./lib/names";
+import { rejectUpgrade } from "./lib/ws";
 
 export type Message = { id: number; author: string; body: string; created_at: number };
 
@@ -22,8 +24,9 @@ function takeFrom(bucket: Bucket, burst: number, refillMs: number, now: number) 
 }
 
 const MAX_BODY = 2000;
-const MAX_FRAME = 4096; // raw frame size, checked before parsing
+const MAX_FRAME = 8192; // raw frame size in bytes, checked before parsing
 const NAME = /^[\p{L}\p{N}_-]{2,20}$/u;
+const encoder = new TextEncoder();
 
 // Message rate limit per socket: bursts of 5, then 1 message per second
 const BURST = 5;
@@ -33,6 +36,7 @@ const IP_REFILL_MS = 500;
 const MAX_CONNECTIONS = 200;
 const MAX_PER_IP = 3; 
 const MAX_STRIKES = 10;
+const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // messages older than this are deleted
 
 const SWEEP_MS = 60_000;     // alarm interval while the room has sockets
 const DEAD_MS = 5 * 60_000;  // no ping and no message for this long: close
@@ -129,16 +133,6 @@ export class Room extends DurableObject<CloudflareBindings> {
     return { allowed, strikes };
   }
 
-  // Browsers can't read the status of a failed WebSocket handshake, so instead of
-  // answering 400/409 we complete the upgrade, send an error event and close with a code.
-  #reject(code: number, reason: string): Response {
-    const { 0: client, 1: server } = new WebSocketPair();
-    server.accept(); // plain accept: this socket isn't worth hibernating
-    this.#send(server, { type: "rejected", code, error: reason });
-    server.close(code, reason);
-    return new Response(null, { status: 101, webSocket: client });
-  }
-
   async #ensureAlarm() {
     if ((await this.ctx.storage.getAlarm()) === null) {
       await this.ctx.storage.setAlarm(Date.now() + SWEEP_MS);
@@ -151,6 +145,7 @@ export class Room extends DurableObject<CloudflareBindings> {
       "DELETE FROM messages WHERE id <= (SELECT MAX(id) - ? FROM messages)",
       KEEP_MESSAGES,
     );
+    this.ctx.storage.sql.exec("DELETE FROM messages WHERE created_at < ?", Date.now() - MAX_AGE_MS);
   }
 
   // --- RPC methods ---
@@ -169,6 +164,7 @@ export class Room extends DurableObject<CloudflareBindings> {
   }
 
   listMessages(limit = 100): Message[] {
+    this.#prune();
     return this.ctx.storage.sql
       .exec<Message>(
         "SELECT id, author, body, created_at FROM messages ORDER BY id DESC LIMIT ?",
@@ -195,17 +191,17 @@ export class Room extends DurableObject<CloudflareBindings> {
     }
 
     if (this.ctx.getWebSockets().length >= MAX_CONNECTIONS) {
-      return this.#reject(CLOSE_ROOM_FULL, "room full");
+      return rejectUpgrade(CLOSE_ROOM_FULL, "room full");
     }
 
     const ip = request.headers.get("CF-Connecting-IP"); // absent in local dev: no cap applied
 
     const name = new URL(request.url).searchParams.get("name")?.trim() ?? "";
-    if (!NAME.test(name)) return this.#reject(CLOSE_INVALID_NAME, "invalid name");
-    if (this.#nameTaken(name)) return this.#reject(CLOSE_NAME_TAKEN, "name taken");
+    if (!NAME.test(name)) return rejectUpgrade(CLOSE_INVALID_NAME, "invalid name");
+    if (this.#nameTaken(name)) return rejectUpgrade(CLOSE_NAME_TAKEN, "name taken");
     if (ip && this.#connectionsFrom(ip) >= MAX_PER_IP) {
-      return this.#reject(CLOSE_IP_LIMIT, "too many connections");
-    }  
+      return rejectUpgrade(CLOSE_IP_LIMIT, "too many connections");
+    }
 
     const { 0: client, 1: server } = new WebSocketPair();
     this.ctx.acceptWebSocket(server);
@@ -236,10 +232,11 @@ export class Room extends DurableObject<CloudflareBindings> {
       return this.#send(ws, { type: "error", error: "slow down" });
     }
 
-    if (raw.length > MAX_FRAME) {
+    // bytes are never fewer than characters, so the cheap length check goes first
+    if (raw.length > MAX_FRAME || encoder.encode(raw).byteLength > MAX_FRAME) {
       return this.#send(ws, { type: "error", error: "message too large" });
     }
-
+    
     let body: unknown;
     try {
       body = JSON.parse(raw)?.body;
