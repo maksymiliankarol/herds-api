@@ -102,12 +102,48 @@ pnpm wrangler d1 execute herds-db --local --command="DELETE FROM news WHERE id =
 
 Admin routes need `-H "authorization: Bearer $ADMIN_TOKEN"` (double quotes, so the shell expands the variable). Add `-i` to curl to see status codes, since a successful `204` prints nothing.
 
+### Countries
+
+```bash
+# create (admin): code is the 2-letter ISO code
+curl -X POST localhost:8787/countries \
+  -H "authorization: Bearer $ADMIN_TOKEN" \
+  -H 'content-type: application/json' \
+  -d '{"code":"de","name":"Germany"}'
+
+# create again -> 409
+curl -i -X POST localhost:8787/countries \
+  -H "authorization: Bearer $ADMIN_TOKEN" \
+  -H 'content-type: application/json' \
+  -d '{"code":"de","name":"Germany"}'
+
+# delete (admin): only works when the country has no cities -> otherwise 409
+curl -i -X DELETE localhost:8787/countries/de \
+  -H "authorization: Bearer $ADMIN_TOKEN"
+```
+
 ### Cities
 
 ```bash
 # search (empty q lists everything, max 20)
 curl "localhost:8787/cities?q=war"
 curl "localhost:8787/cities"
+
+# create (admin); the country must already exist
+curl -X POST localhost:8787/cities \
+  -H "authorization: Bearer $ADMIN_TOKEN" \
+  -H 'content-type: application/json' \
+  -d '{"slug":"gdansk","name":"Gdansk","country":"pl"}'
+
+# create again -> 409
+curl -i -X POST localhost:8787/cities \
+  -H "authorization: Bearer $ADMIN_TOKEN" \
+  -H 'content-type: application/json' \
+  -d '{"slug":"gdansk","name":"Gdansk","country":"pl"}'
+
+# delete (admin): wipes the city's rooms (including Durable Object chat storage) and news
+curl -i -X DELETE localhost:8787/cities/gdansk \
+  -H "authorization: Bearer $ADMIN_TOKEN"
 ```
 
 ### Rooms
@@ -136,8 +172,8 @@ curl -X POST localhost:8787/cities/warsaw/rooms \
   -H 'content-type: application/json' \
   -d '{"slug":"food","title":"Food"}'
 
-# delete (admin): wipes the Durable Object, the registry row and its news
-curl -X DELETE localhost:8787/cities/warsaw/rooms/general \
+# delete (admin): wipes the room and its sub-rooms (slug_*): Durable Objects, registry rows and news
+curl -i -X DELETE localhost:8787/cities/warsaw/rooms/general \
   -H "authorization: Bearer $ADMIN_TOKEN"
 ```
 
