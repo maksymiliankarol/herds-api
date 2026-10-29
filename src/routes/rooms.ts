@@ -12,13 +12,13 @@ const MAX_SLUG = 40;
 export const roomsRoutes = new Hono<AppEnv>();
 
 roomsRoutes.get("/cities/:city/rooms", async (c) => {
-  const city = await c.env.herds_db
+  const city = await c.env.HERDS_DB
     .prepare("SELECT id, slug, name FROM cities WHERE slug = ?")
     .bind(c.req.param("city"))
     .first<{ id: number; slug: string; name: string }>();
   if (!city) return c.json({ error: "city not found" }, 404);
 
-  const { results } = await c.env.herds_db
+  const { results } = await c.env.HERDS_DB
     .prepare("SELECT slug, title FROM rooms WHERE city_id = ? ORDER BY title")
     .bind(city.id)
     .all();
@@ -34,7 +34,7 @@ roomsRoutes.post("/cities/:city/rooms", admin, async (c) => {
   if (!slug || slug.length > MAX_SLUG || !SLUG.test(slug)) return c.json({ error: "invalid slug" }, 400);
   if (!title) return c.json({ error: "title required" }, 400);
 
-  const city = await c.env.herds_db
+  const city = await c.env.HERDS_DB
     .prepare("SELECT id FROM cities WHERE slug = ?")
     .bind(c.req.param("city"))
     .first<{ id: number }>();
@@ -42,7 +42,7 @@ roomsRoutes.post("/cities/:city/rooms", admin, async (c) => {
 
   const parent = slug.split("_")[1] !== undefined ? slug.split("_")[0] : null;
   if (parent) {
-    const exists = await c.env.herds_db
+    const exists = await c.env.HERDS_DB
       .prepare("SELECT 1 FROM rooms WHERE city_id = ? AND slug = ?")
       .bind(city.id, parent)
       .first();
@@ -50,7 +50,7 @@ roomsRoutes.post("/cities/:city/rooms", admin, async (c) => {
   }
 
   // RETURNING gives no row when the conflict clause skips the insert
-  const room = await c.env.herds_db
+  const room = await c.env.HERDS_DB
     .prepare(
       `INSERT INTO rooms (city_id, slug, title) VALUES (?, ?, ?)
        ON CONFLICT (city_id, slug) DO NOTHING
@@ -70,7 +70,7 @@ roomsRoutes.delete("/cities/:city/rooms/:slug", admin, async (c) => {
   // "_" is a LIKE wildcard, so it has to be escaped to match literally
   const childPattern = `${escapeLike(slug + "_")}%`;
 
-  const { results } = await c.env.herds_db
+  const { results } = await c.env.HERDS_DB
     .prepare(
       `SELECT rooms.id, rooms.slug FROM rooms
        JOIN cities ON cities.id = rooms.city_id
@@ -87,7 +87,7 @@ roomsRoutes.delete("/cities/:city/rooms/:slug", admin, async (c) => {
   for (const room of results) await roomStub(c.env, room.id).destroy();
 
   const ids = results.map((r) => r.id);
-  await c.env.herds_db
+  await c.env.HERDS_DB
     .prepare(`DELETE FROM rooms WHERE id IN (${ids.map(() => "?").join(",")})`)
     .bind(...ids)
     .run();

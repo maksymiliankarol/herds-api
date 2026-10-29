@@ -24,7 +24,7 @@
 	],
 	"d1_databases": [
 		{
-			"binding": "herds_db",
+			"binding": "HERDS_DB",
 			"database_name": "herds-db",
 			"database_id": "b74c8ca0-b368-4eaf-9242-8b0eea09a2aa",
 			"migrations_dir": "migrations"
@@ -35,5 +35,7 @@
 		{ "name": "ADMIN_LIMITER",    "namespace_id": "1002", "simple": { "limit": 20,  "period": 60 } },
 		{ "name": "READ_LIMITER",     "namespace_id": "1003", "simple": { "limit": 120, "period": 60 } },
 		{ "name": "MESSAGES_LIMITER", "namespace_id": "1004", "simple": { "limit": 10,  "period": 60 } }
-	]
+	],
+	"ai": { "binding": "AI" },
+	"browser": { "binding": "BROWSER", "remote": true },
 }

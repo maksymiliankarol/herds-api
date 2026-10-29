@@ -14,7 +14,7 @@ citiesRoutes.get("/cities", async (c) => {
   const q = (c.req.query("q") ?? "").trim().slice(0, 50);
   const pattern = `%${escapeLike(q)}%`;
 
-  const { results } = await c.env.herds_db
+  const { results } = await c.env.HERDS_DB
     .prepare(
       `SELECT cities.slug, cities.name,
               cities.country AS country_code, countries.name AS country_name
@@ -43,14 +43,14 @@ citiesRoutes.post("/cities", admin, async (c) => {
   if (!name || name.length > 100) return c.json({ error: "invalid name" }, 400);
   if (!country || !CODE.test(country)) return c.json({ error: "invalid country" }, 400);
 
-  const known = await c.env.herds_db
+  const known = await c.env.HERDS_DB
     .prepare("SELECT code FROM countries WHERE code = ?")
     .bind(country)
     .first();
   if (!known) return c.json({ error: "country not found" }, 404);
 
   // RETURNING gives no row when the conflict clause skips the insert
-  const city = await c.env.herds_db
+  const city = await c.env.HERDS_DB
     .prepare(
       `INSERT INTO cities (slug, name, country) VALUES (?, ?, ?)
        ON CONFLICT (slug) DO NOTHING
@@ -73,7 +73,7 @@ citiesRoutes.post("/countries", admin, async (c) => {
   if (!name || name.length > 100) return c.json({ error: "invalid name" }, 400);
 
   // RETURNING gives no row when the conflict clause skips the insert
-  const country = await c.env.herds_db
+  const country = await c.env.HERDS_DB
     .prepare(
       `INSERT INTO countries (code, name) VALUES (?, ?)
        ON CONFLICT (code) DO NOTHING
@@ -88,13 +88,13 @@ citiesRoutes.post("/countries", admin, async (c) => {
 
 // DELETE /cities/:city: wipes every room's Durable Object, then the city (rooms and news cascade)
 citiesRoutes.delete("/cities/:city", admin, async (c) => {
-  const city = await c.env.herds_db
+  const city = await c.env.HERDS_DB
     .prepare("SELECT id FROM cities WHERE slug = ?")
     .bind(c.req.param("city"))
     .first<{ id: number }>();
   if (!city) return c.json({ error: "city not found" }, 404);
 
-  const { results } = await c.env.herds_db
+  const { results } = await c.env.HERDS_DB
     .prepare("SELECT id FROM rooms WHERE city_id = ?")
     .bind(city.id)
     .all<{ id: number }>();
@@ -102,7 +102,7 @@ citiesRoutes.delete("/cities/:city", admin, async (c) => {
   // Durable Object storage is not covered by ON DELETE CASCADE
   for (const room of results) await roomStub(c.env, room.id).destroy();
 
-  await c.env.herds_db.prepare("DELETE FROM cities WHERE id = ?").bind(city.id).run();
+  await c.env.HERDS_DB.prepare("DELETE FROM cities WHERE id = ?").bind(city.id).run();
   return c.body(null, 204);
 });
 
@@ -110,13 +110,13 @@ citiesRoutes.delete("/cities/:city", admin, async (c) => {
 citiesRoutes.delete("/countries/:code", admin, async (c) => {
   const code = c.req.param("code").toLowerCase();
 
-  const used = await c.env.herds_db
+  const used = await c.env.HERDS_DB
     .prepare("SELECT COUNT(*) AS n FROM cities WHERE country = ?")
     .bind(code)
     .first<{ n: number }>();
   if ((used?.n ?? 0) > 0) return c.json({ error: "country has cities" }, 409);
 
-  const result = await c.env.herds_db
+  const result = await c.env.HERDS_DB
     .prepare("DELETE FROM countries WHERE code = ?")
     .bind(code)
     .run();

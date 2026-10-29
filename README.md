@@ -194,6 +194,32 @@ curl -X DELETE localhost:8787/cities/warsaw/rooms/general/news/1 \
   -H "authorization: Bearer $ADMIN_TOKEN"
 ```
 
+### Publishing News
+
+```bash
+# generate (takes a while: three page loads plus the model)
+curl -X POST localhost:8787/admin/news-drafts \
+  -H "authorization: Bearer $ADMIN_TOKEN" \
+  -H 'content-type: application/json' \
+  -d '{"room":"krakow/education"}'
+
+# review pending drafts
+curl localhost:8787/admin/news-drafts -H "authorization: Bearer $ADMIN_TOKEN"
+
+# publish as is
+curl -X POST localhost:8787/admin/news-drafts/1/publish \
+  -H "authorization: Bearer $ADMIN_TOKEN"
+
+# publish with your edits
+curl -X POST localhost:8787/admin/news-drafts/1/publish \
+  -H "authorization: Bearer $ADMIN_TOKEN" \
+  -H 'content-type: application/json' \
+  -d '{"title":"Better title","body":"Edited **body**."}'
+
+# discard
+curl -X DELETE localhost:8787/admin/news-drafts/1 -H "authorization: Bearer $ADMIN_TOKEN"
+```
+
 ### Messages
 
 Messages can only be posted through the WebSocket. There is no HTTP post route.

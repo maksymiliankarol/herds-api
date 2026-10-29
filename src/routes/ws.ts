@@ -27,7 +27,7 @@ wsRoutes.get("/cities/:city/rooms/:slug/ws", async (c) => {
   const human = await verifyTurnstile(token, c.env.TURNSTILE_SECRET, c.req.header("CF-Connecting-IP"));
   if (!human) return rejectUpgrade(CLOSE_VERIFICATION_FAILED, "verification failed");
 
-  const id = await findRoomId(c.env.herds_db, c.req.param("city"), c.req.param("slug"));
+  const id = await findRoomId(c.env.HERDS_DB, c.req.param("city"), c.req.param("slug"));
   if (id === null) return c.json({ error: "room not found" }, 404);
 
   // the Room doesn't need the token: strip it before forwarding

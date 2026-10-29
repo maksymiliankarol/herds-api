@@ -10,10 +10,10 @@ const MAX_NEWS_BODY = 5000;
 export const newsRoutes = new Hono<AppEnv>();
 
 newsRoutes.get("/cities/:city/rooms/:slug/news", async (c) => {
-  const id = await findRoomId(c.env.herds_db, c.req.param("city"), c.req.param("slug"));
+  const id = await findRoomId(c.env.HERDS_DB, c.req.param("city"), c.req.param("slug"));
   if (id === null) return c.json({ error: "room not found" }, 404);
 
-  const { results } = await c.env.herds_db
+  const { results } = await c.env.HERDS_DB
     .prepare(
       `SELECT id, title, body, created_at FROM news
        WHERE room_id = ? ORDER BY created_at DESC, id DESC LIMIT 50`,
@@ -32,10 +32,10 @@ newsRoutes.post("/cities/:city/rooms/:slug/news", admin, async (c) => {
   if (!title || title.length > MAX_NEWS_TITLE) return c.json({ error: "invalid title" }, 400);
   if (!body || body.length > MAX_NEWS_BODY) return c.json({ error: "invalid body" }, 400);
 
-  const id = await findRoomId(c.env.herds_db, c.req.param("city"), c.req.param("slug"));
+  const id = await findRoomId(c.env.HERDS_DB, c.req.param("city"), c.req.param("slug"));
   if (id === null) return c.json({ error: "room not found" }, 404);
 
-  const item = await c.env.herds_db
+  const item = await c.env.HERDS_DB
     .prepare(
       "INSERT INTO news (room_id, title, body) VALUES (?, ?, ?) RETURNING id, title, body, created_at",
     )
@@ -49,11 +49,11 @@ newsRoutes.delete("/cities/:city/rooms/:slug/news/:id", admin, async (c) => {
   const newsId = Number(c.req.param("id"));
   if (!Number.isInteger(newsId)) return c.json({ error: "invalid id" }, 400);
 
-  const roomId = await findRoomId(c.env.herds_db, c.req.param("city"), c.req.param("slug"));
+  const roomId = await findRoomId(c.env.HERDS_DB, c.req.param("city"), c.req.param("slug"));
   if (roomId === null) return c.json({ error: "room not found" }, 404);
 
   // scoped to the room, so an id from another room can't be deleted through this URL
-  const result = await c.env.herds_db
+  const result = await c.env.HERDS_DB
     .prepare("DELETE FROM news WHERE id = ? AND room_id = ?")
     .bind(newsId, roomId)
     .run();
