@@ -8,7 +8,6 @@ import { messagesRoutes } from "./routes/messages";
 import { newsRoutes } from "./routes/news";
 import { roomsRoutes } from "./routes/rooms";
 import { wsRoutes } from "./routes/ws";
-import { newsDraftsRoutes } from "../scripts/news/news-draft";
 
 // wrangler needs the Durable Object class exported from the entry file
 export { Room } from "./room";
@@ -34,6 +33,5 @@ app.route("/", citiesRoutes);
 app.route("/", roomsRoutes);
 app.route("/", messagesRoutes);
 app.route("/", newsRoutes);
-app.route("/", newsDraftsRoutes);
 
 export default app;
