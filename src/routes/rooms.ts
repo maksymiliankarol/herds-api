@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { errorBody } from "../lib/error-codes";
 import type { AppEnv } from "../lib/env";
 import { roomStub } from "../lib/rooms";
 import { admin } from "../middleware/admin";
@@ -16,7 +17,7 @@ roomsRoutes.get("/cities/:city/rooms", async (c) => {
     .prepare("SELECT id, slug, name FROM cities WHERE slug = ?")
     .bind(c.req.param("city"))
     .first<{ id: number; slug: string; name: string }>();
-  if (!city) return c.json({ error: "city not found" }, 404);
+  if (!city) return c.json(errorBody("city_not_found"), 404);
 
   const { results } = await c.env.HERDS_DB
     .prepare("SELECT slug, title FROM rooms WHERE city_id = ? ORDER BY title")
@@ -31,14 +32,14 @@ roomsRoutes.post("/cities/:city/rooms", admin, async (c) => {
   const slug = data?.slug;
   const title = data?.title?.trim();
 
-  if (!slug || slug.length > MAX_SLUG || !SLUG.test(slug)) return c.json({ error: "invalid slug" }, 400);
-  if (!title) return c.json({ error: "title required" }, 400);
+  if (!slug || slug.length > MAX_SLUG || !SLUG.test(slug)) return c.json(errorBody("invalid_slug"), 400);
+  if (!title) return c.json(errorBody("title_required"), 400);
 
   const city = await c.env.HERDS_DB
     .prepare("SELECT id FROM cities WHERE slug = ?")
     .bind(c.req.param("city"))
     .first<{ id: number }>();
-  if (!city) return c.json({ error: "city not found" }, 404);
+  if (!city) return c.json(errorBody("city_not_found"), 404);
 
   const parent = slug.split("_")[1] !== undefined ? slug.split("_")[0] : null;
   if (parent) {
@@ -46,7 +47,7 @@ roomsRoutes.post("/cities/:city/rooms", admin, async (c) => {
       .prepare("SELECT 1 FROM rooms WHERE city_id = ? AND slug = ?")
       .bind(city.id, parent)
       .first();
-    if (!exists) return c.json({ error: "parent room not found" }, 400);
+    if (!exists) return c.json(errorBody("parent_room_not_found"), 400);
   }
 
   // RETURNING gives no row when the conflict clause skips the insert
@@ -59,7 +60,7 @@ roomsRoutes.post("/cities/:city/rooms", admin, async (c) => {
     .bind(city.id, slug, title)
     .first<{ slug: string; title: string }>();
 
-  if (!room) return c.json({ error: "room exists" }, 409);
+  if (!room) return c.json(errorBody("room_exists"), 409);
   return c.json(room, 201);
 });
 
@@ -81,7 +82,7 @@ roomsRoutes.delete("/cities/:city/rooms/:slug", admin, async (c) => {
     .all<{ id: number; slug: string }>();
 
   // the room itself must exist; children alone don't count
-  if (!results.some((r) => r.slug === slug)) return c.json({ error: "room not found" }, 404);
+  if (!results.some((r) => r.slug === slug)) return c.json(errorBody("room_not_found"), 404);
 
   // Wipe the objects first, then the rows. News rows go with them (ON DELETE CASCADE).
   for (const room of results) await roomStub(c.env, room.id).destroy();

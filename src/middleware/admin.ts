@@ -1,5 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import { safeEqual } from "../lib/crypto";
+import { errorBody } from "../lib/error-codes";
 import type { AppEnv } from "../lib/env";
 import { limitedResponse } from "./rate-limit";
 
@@ -10,11 +11,11 @@ export const admin = createMiddleware<AppEnv>(async (c, next) => {
   if (limited) return limited;
 
   const expected = c.env.ADMIN_TOKEN;
-  if (!expected) return c.json({ error: "admin not configured" }, 500); // fail closed
+  if (!expected) return c.json(errorBody("admin_not_configured"), 500); // fail closed
 
   const match = c.req.header("Authorization")?.match(/^Bearer (.+)$/);
   if (!match || !(await safeEqual(match[1], expected))) {
-    return c.json({ error: "unauthorized" }, 401, {
+    return c.json(errorBody("unauthorized"), 401, {
       "WWW-Authenticate": 'Bearer realm="admin"',
     });
   }

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { errorBody } from "../lib/error-codes";
 import type { AppEnv } from "../lib/env";
 import { escapeLike } from "../lib/sql";
 import { admin } from "../middleware/admin";
@@ -39,15 +40,15 @@ citiesRoutes.post("/cities", admin, async (c) => {
   const name = data?.name?.trim();
   const country = data?.country?.trim().toLowerCase();
 
-  if (!slug || !SLUG.test(slug)) return c.json({ error: "invalid slug" }, 400);
-  if (!name || name.length > 100) return c.json({ error: "invalid name" }, 400);
-  if (!country || !CODE.test(country)) return c.json({ error: "invalid country" }, 400);
+  if (!slug || !SLUG.test(slug)) return c.json(errorBody("invalid_slug"), 400);
+  if (!name || name.length > 100) return c.json(errorBody("invalid_name"), 400);
+  if (!country || !CODE.test(country)) return c.json(errorBody("invalid_country"), 400);
 
   const known = await c.env.HERDS_DB
     .prepare("SELECT code FROM countries WHERE code = ?")
     .bind(country)
     .first();
-  if (!known) return c.json({ error: "country not found" }, 404);
+  if (!known) return c.json(errorBody("country_not_found"), 404);
 
   // RETURNING gives no row when the conflict clause skips the insert
   const city = await c.env.HERDS_DB
@@ -59,7 +60,7 @@ citiesRoutes.post("/cities", admin, async (c) => {
     .bind(slug, name, country)
     .first();
 
-  if (!city) return c.json({ error: "city exists" }, 409);
+  if (!city) return c.json(errorBody("city_exists"), 409);
   return c.json(city, 201);
 });
 
@@ -69,8 +70,8 @@ citiesRoutes.post("/countries", admin, async (c) => {
   const code = data?.code?.trim().toLowerCase();
   const name = data?.name?.trim();
 
-  if (!code || !CODE.test(code)) return c.json({ error: "invalid code" }, 400);
-  if (!name || name.length > 100) return c.json({ error: "invalid name" }, 400);
+  if (!code || !CODE.test(code)) return c.json(errorBody("invalid_code"), 400);
+  if (!name || name.length > 100) return c.json(errorBody("invalid_name"), 400);
 
   // RETURNING gives no row when the conflict clause skips the insert
   const country = await c.env.HERDS_DB
@@ -82,7 +83,7 @@ citiesRoutes.post("/countries", admin, async (c) => {
     .bind(code, name)
     .first();
 
-  if (!country) return c.json({ error: "country exists" }, 409);
+  if (!country) return c.json(errorBody("country_exists"), 409);
   return c.json(country, 201);
 });
 
@@ -92,7 +93,7 @@ citiesRoutes.delete("/cities/:city", admin, async (c) => {
     .prepare("SELECT id FROM cities WHERE slug = ?")
     .bind(c.req.param("city"))
     .first<{ id: number }>();
-  if (!city) return c.json({ error: "city not found" }, 404);
+  if (!city) return c.json(errorBody("city_not_found"), 404);
 
   const { results } = await c.env.HERDS_DB
     .prepare("SELECT id FROM rooms WHERE city_id = ?")
@@ -114,13 +115,13 @@ citiesRoutes.delete("/countries/:code", admin, async (c) => {
     .prepare("SELECT COUNT(*) AS n FROM cities WHERE country = ?")
     .bind(code)
     .first<{ n: number }>();
-  if ((used?.n ?? 0) > 0) return c.json({ error: "country has cities" }, 409);
+  if ((used?.n ?? 0) > 0) return c.json(errorBody("country_has_cities"), 409);
 
   const result = await c.env.HERDS_DB
     .prepare("DELETE FROM countries WHERE code = ?")
     .bind(code)
     .run();
-  if (result.meta.changes === 0) return c.json({ error: "country not found" }, 404);
+  if (result.meta.changes === 0) return c.json(errorBody("country_not_found"), 404);
 
   return c.body(null, 204);
 });

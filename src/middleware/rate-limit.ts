@@ -1,13 +1,14 @@
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { clientKey } from "../lib/client";
+import { errorBody } from "../lib/error-codes";
 import type { AppEnv } from "../lib/env";
 
 // Returns a 429 response when the caller is over the limit, otherwise null
 export async function limitedResponse(c: Context<AppEnv>, limiter: RateLimit) {
   const { success } = await limiter.limit({ key: clientKey(c.req.raw) });
   if (success) return null;
-  return c.json({ error: "too many requests" }, 429, { "Retry-After": "60" });
+  return c.json(errorBody("rate_limited"), 429, { "Retry-After": "60" });
 }
 
 type LimiterName = "READ_LIMITER" | "MESSAGES_LIMITER";

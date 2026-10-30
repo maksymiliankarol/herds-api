@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { errorBody } from "../lib/error-codes";
 import type { AppEnv } from "../lib/env";
 import { findRoomId } from "../lib/rooms";
 import { admin } from "../middleware/admin";
@@ -11,7 +12,7 @@ export const newsRoutes = new Hono<AppEnv>();
 
 newsRoutes.get("/cities/:city/rooms/:slug/news", async (c) => {
   const id = await findRoomId(c.env.HERDS_DB, c.req.param("city"), c.req.param("slug"));
-  if (id === null) return c.json({ error: "room not found" }, 404);
+  if (id === null) return c.json(errorBody("room_not_found"), 404);
 
   const { results } = await c.env.HERDS_DB
     .prepare(
@@ -29,11 +30,11 @@ newsRoutes.post("/cities/:city/rooms/:slug/news", admin, async (c) => {
   const title = data?.title?.trim();
   const body = data?.body?.trim();
 
-  if (!title || title.length > MAX_NEWS_TITLE) return c.json({ error: "invalid title" }, 400);
-  if (!body || body.length > MAX_NEWS_BODY) return c.json({ error: "invalid body" }, 400);
+  if (!title || title.length > MAX_NEWS_TITLE) return c.json(errorBody("invalid_news_title"), 400);
+  if (!body || body.length > MAX_NEWS_BODY) return c.json(errorBody("invalid_news_body"), 400);
 
   const id = await findRoomId(c.env.HERDS_DB, c.req.param("city"), c.req.param("slug"));
-  if (id === null) return c.json({ error: "room not found" }, 404);
+  if (id === null) return c.json(errorBody("room_not_found"), 404);
 
   const item = await c.env.HERDS_DB
     .prepare(
@@ -47,10 +48,10 @@ newsRoutes.post("/cities/:city/rooms/:slug/news", admin, async (c) => {
 
 newsRoutes.delete("/cities/:city/rooms/:slug/news/:id", admin, async (c) => {
   const newsId = Number(c.req.param("id"));
-  if (!Number.isInteger(newsId)) return c.json({ error: "invalid id" }, 400);
+  if (!Number.isInteger(newsId)) return c.json(errorBody("invalid_id"), 400);
 
   const roomId = await findRoomId(c.env.HERDS_DB, c.req.param("city"), c.req.param("slug"));
-  if (roomId === null) return c.json({ error: "room not found" }, 404);
+  if (roomId === null) return c.json(errorBody("room_not_found"), 404);
 
   // scoped to the room, so an id from another room can't be deleted through this URL
   const result = await c.env.HERDS_DB
@@ -58,6 +59,6 @@ newsRoutes.delete("/cities/:city/rooms/:slug/news/:id", admin, async (c) => {
     .bind(newsId, roomId)
     .run();
 
-  if (result.meta.changes === 0) return c.json({ error: "news not found" }, 404);
+  if (result.meta.changes === 0) return c.json(errorBody("news_not_found"), 404);
   return c.body(null, 204);
 });
