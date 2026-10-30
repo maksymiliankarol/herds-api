@@ -25,7 +25,7 @@ wsRoutes.get("/cities/:city/rooms/:slug/ws", async (c) => {
   if (!c.env.TURNSTILE_SECRET) return c.text("Not configured", 500); // fail closed
   const token = c.req.query("token") ?? "";
   const human = await verifyTurnstile(token, c.env.TURNSTILE_SECRET, c.req.header("CF-Connecting-IP"));
-  if (!human) return rejectUpgrade(CLOSE_VERIFICATION_FAILED, "verification failed");
+  if (!human) return rejectUpgrade(CLOSE_VERIFICATION_FAILED);
 
   const id = await findRoomId(c.env.HERDS_DB, c.req.param("city"), c.req.param("slug"));
   if (id === null) return c.json({ error: "room not found" }, 404);

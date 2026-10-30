@@ -1,14 +1,20 @@
 import { DurableObject } from "cloudflare:workers";
-import { isReservedName } from "./lib/names";
 import { rejectUpgrade } from "./lib/ws";
 
 export type Message = { id: number; author: string; body: string; created_at: number };
 
+type ErrorCode =
+  | "slow_down"
+  | "too_many_messages"
+  | "message_too_large"
+  | "invalid_json"
+  | "invalid_body";
+
 type ServerEvent =
   | { type: "history"; messages: Message[] }
   | { type: "message"; message: Message }
-  | { type: "error"; error: string }
-  | { type: "rejected"; code: number; error: string };
+  | { type: "error"; code: ErrorCode }
+  | { type: "rejected"; code: number };
 
 // tokens/at are optional because sockets opened before the limiter existed have neither;
 // ip is optional for the same reason (and because it's missing in local dev)
@@ -191,16 +197,16 @@ export class Room extends DurableObject<CloudflareBindings> {
     }
 
     if (this.ctx.getWebSockets().length >= MAX_CONNECTIONS) {
-      return rejectUpgrade(CLOSE_ROOM_FULL, "room full");
+      return rejectUpgrade(CLOSE_ROOM_FULL);
     }
 
     const ip = request.headers.get("CF-Connecting-IP"); // absent in local dev: no cap applied
 
     const name = new URL(request.url).searchParams.get("name")?.trim() ?? "";
-    if (!NAME.test(name)) return rejectUpgrade(CLOSE_INVALID_NAME, "invalid name");
-    if (this.#nameTaken(name)) return rejectUpgrade(CLOSE_NAME_TAKEN, "name taken");
+    if (!NAME.test(name)) return rejectUpgrade(CLOSE_INVALID_NAME);
+    if (this.#nameTaken(name)) return rejectUpgrade(CLOSE_NAME_TAKEN);
     if (ip && this.#connectionsFrom(ip) >= MAX_PER_IP) {
-      return rejectUpgrade(CLOSE_IP_LIMIT, "too many connections");
+      return rejectUpgrade(CLOSE_IP_LIMIT);
     }
 
     const { 0: client, 1: server } = new WebSocketPair();
@@ -224,28 +230,28 @@ export class Room extends DurableObject<CloudflareBindings> {
       if (strikes >= MAX_STRIKES) {
         // frames already in flight can still arrive after the close, so never let this throw
         try {
-          this.#send(ws, { type: "error", error: "too many messages" });
+          this.#send(ws, { type: "error", code: "too_many_messages" }); // was error: "too many messages"
           ws.close(CLOSE_RATE_LIMITED, "rate limited");
         } catch {}
         return;
       }
-      return this.#send(ws, { type: "error", error: "slow down" });
+      return this.#send(ws, { type: "error", code: "slow_down" });
     }
 
     // bytes are never fewer than characters, so the cheap length check goes first
     if (raw.length > MAX_FRAME || encoder.encode(raw).byteLength > MAX_FRAME) {
-      return this.#send(ws, { type: "error", error: "message too large" });
+      return this.#send(ws, { type: "error", code: "message_too_large" });
     }
     
     let body: unknown;
     try {
       body = JSON.parse(raw)?.body;
     } catch {
-      return this.#send(ws, { type: "error", error: "invalid JSON" });
+      return this.#send(ws, { type: "error", code: "invalid_json" });
     }
 
     if (typeof body !== "string" || !body.trim() || body.length > MAX_BODY) {
-      return this.#send(ws, { type: "error", error: "invalid body" });
+      return this.#send(ws, { type: "error", code: "invalid_body" });
     }
 
     this.addMessage(attachment.name, body.trim());

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../lib/env";
-import { findRoomId, roomStub } from "../lib/rooms";
+import { roomStub } from "../lib/rooms";
 import { admin } from "../middleware/admin";
 import { escapeLike } from "../lib/sql";
 
