@@ -1,0 +1,17 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "herds-api",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-11-03",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "herds-db",
+			"database_id": "97bfd537-8a90-4dbb-93a8-1b029575cbaa"
+		}
+	],
+	"durable_objects": {
+		"bindings": [{ "name": "CHAT_ROOM", "class_name": "ChatRoom" }]
+	},
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["ChatRoom"] }],
+}
