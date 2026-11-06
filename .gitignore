@@ -15,6 +15,9 @@ dist/
 node_modules/
 .wrangler
 
+# private
+TODO.md
+
 # env
 .env
 .env.production

@@ -33,3 +33,11 @@ export const RoomsQuerySchema = v.object({ city_id: Id });
 export const CitySearchSchema = v.object({
   q: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)),
 });
+
+export const NewsSchema = v.object({
+  title: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(200)),
+  content: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(5000)),
+  room_id: v.pipe(v.number(), v.integer(), v.minValue(1)),
+});
+
+export const NewsQuerySchema = v.object({ room_id: Id });

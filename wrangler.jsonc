@@ -14,4 +14,11 @@
 		"bindings": [{ "name": "CHAT_ROOM", "class_name": "ChatRoom" }]
 	},
 	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["ChatRoom"] }],
+	"ratelimits": [
+		{
+			"name": "RATE_LIMITER",
+			"namespace_id": "1001",
+			"simple": { "limit": 20, "period": 60 }
+		}
+	],
 }

@@ -33,3 +33,19 @@ curl -X POST http://localhost:8787/rooms \
 curl -X DELETE http://localhost:8787/rooms/1 \
   -H "Authorization: Bearer $ADMIN_KEY"
 ```
+
+### Create a news
+
+```bash
+curl -X POST http://localhost:8787/news \
+  -H "Authorization: Bearer $ADMIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Road closed","content":"Main street closed until Friday.","room_id":1}'
+```
+
+### Deleting a news
+
+```bash
+curl -X DELETE http://localhost:8787/news/1 \
+  -H "Authorization: Bearer $ADMIN_KEY"
+```
