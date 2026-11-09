@@ -5,12 +5,14 @@ import { admin } from "../middleware/admin";
 
 const cities = new Hono<{ Bindings: CloudflareBindings }>();
 
+// Is it correct and efficient?
 cities.get("/", vValidator("query", CitySearchSchema), async (c) => {
   const { q } = c.req.valid("query");
+  const like = `%${q}%`;
 
   const { results } = await c.env.DB
-    .prepare("SELECT id, city, city_label, country_code FROM cities WHERE city_label LIKE ? ORDER BY city_label LIMIT 20")
-    .bind(`%${q}%`)
+    .prepare("SELECT id, city, city_label, country_code FROM cities WHERE city LIKE ? OR city_label LIKE ? ORDER BY city_label LIMIT 20")
+    .bind(like, like)
     .all();
 
   return c.json(results);
