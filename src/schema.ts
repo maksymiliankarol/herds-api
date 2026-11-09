@@ -9,8 +9,8 @@ const RESERVED_USERNAMES = [
 const Id = v.pipe(v.string(), v.regex(/^\d+$/, "Invalid id"), v.transform(Number));
 
 export const CitySchema = v.object({
-  city: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)),
-  city_label: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)),
+  title: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)),
+  search: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.minLength(1), v.maxLength(100)),
   country_code: v.pipe(v.string(), v.trim(), v.toUpperCase(), v.regex(/^[A-Z]{2}$/, "Invalid country code")),
 });
 

@@ -36,6 +36,9 @@ rooms.post("/", admin, vValidator("json", RoomSchema), async (c) => {
     if (String(e).includes("FOREIGN KEY")) {
       return c.json({ error: "City not found" }, 404);
     }
+    if (String(e).includes("UNIQUE")) {
+      return c.json({ error: "Room already exists" }, 409);
+    }
     throw e;
   }
 });

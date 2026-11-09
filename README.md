@@ -8,7 +8,7 @@
 curl -X POST http://localhost:8787/cities \
   -H "Authorization: Bearer $ADMIN_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"city":"warsaw","city_label":"Warsaw","country_code":"pl"}'
+  -d '{"title":"Kraków","search":"krakow","country_code":"pl"}'
 ```
 
 ### Delete city

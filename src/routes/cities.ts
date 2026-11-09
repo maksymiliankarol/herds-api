@@ -11,7 +11,7 @@ cities.get("/", vValidator("query", CitySearchSchema), async (c) => {
   const like = `%${q}%`;
 
   const { results } = await c.env.DB
-    .prepare("SELECT id, city, city_label, country_code FROM cities WHERE city LIKE ? OR city_label LIKE ? ORDER BY city_label LIMIT 20")
+    .prepare("SELECT id, title, country_code FROM cities WHERE search LIKE ? OR title LIKE ? ORDER BY title LIMIT 20")
     .bind(like, like)
     .all();
 
@@ -19,12 +19,12 @@ cities.get("/", vValidator("query", CitySearchSchema), async (c) => {
 });
 
 cities.post("/", admin, vValidator("json", CitySchema), async (c) => {
-  const { city, city_label, country_code } = c.req.valid("json");
+  const { title, search, country_code } = c.req.valid("json");
 
   try {
     const row = await c.env.DB
-      .prepare("INSERT INTO cities (city, city_label, country_code) VALUES (?, ?, ?) RETURNING *")
-      .bind(city, city_label, country_code)
+      .prepare("INSERT INTO cities (title, search, country_code) VALUES (?, ?, ?) RETURNING *")
+      .bind(title, search, country_code)
       .first();
     return c.json(row, 201);
   } catch (e) {
