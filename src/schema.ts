@@ -41,3 +41,12 @@ export const NewsSchema = v.object({
 });
 
 export const NewsQuerySchema = v.object({ room_id: Id });
+
+export const KickSchema = v.pipe(
+  v.object({
+    username: v.optional(v.string()),
+    ip: v.optional(v.string()),
+    ban_hours: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(720))),
+  }),
+  v.check((k) => Boolean(k.username || k.ip), "username or ip required"),
+);

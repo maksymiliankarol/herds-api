@@ -1,9 +1,14 @@
 import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
-import { RoomSchema, IdParamSchema, RoomsQuerySchema } from "../schema";
+import { RoomSchema, IdParamSchema, RoomsQuerySchema, KickSchema } from "../schema";
 import { admin } from "../middleware/admin";
 
 const rooms = new Hono<{ Bindings: CloudflareBindings }>();
+
+const roomStub = (env: CloudflareBindings, id: number) =>
+  env.CHAT_ROOM.get(env.CHAT_ROOM.idFromName(String(id)));
+
+// Public
 
 rooms.get("/", vValidator("query", RoomsQuerySchema), async (c) => {
   const { city_id } = c.req.valid("query");
@@ -15,6 +20,8 @@ rooms.get("/", vValidator("query", RoomsQuerySchema), async (c) => {
 
   return c.json(results);
 });
+
+// Admin
 
 rooms.post("/", admin, vValidator("json", RoomSchema), async (c) => {
   const { title, city_id } = c.req.valid("json");
@@ -43,8 +50,7 @@ rooms.delete("/:id", admin, vValidator("param", IdParamSchema), async (c) => {
       .run();
     if (meta.changes === 0) return c.json({ error: "Not found" }, 404);
 
-    const stub = c.env.CHAT_ROOM.get(c.env.CHAT_ROOM.idFromName(String(id)));
-    await stub.destroy();
+    await roomStub(c.env, id).destroy();
 
     return c.body(null, 204);
   } catch (e) {
@@ -53,6 +59,30 @@ rooms.delete("/:id", admin, vValidator("param", IdParamSchema), async (c) => {
     }
     throw e;
   }
+});
+
+rooms.get("/:id/users", admin, vValidator("param", IdParamSchema), async (c) => {
+  const { id } = c.req.valid("param");
+  return c.json(await roomStub(c.env, id).users());
+});
+
+rooms.post("/:id/kick", admin, vValidator("param", IdParamSchema), vValidator("json", KickSchema), async (c) => {
+  const { id } = c.req.valid("param");
+  const { ban_hours, ...target } = c.req.valid("json");
+
+  const ips = await roomStub(c.env, id).kick(target);
+
+  if (ban_hours && ips.length > 0) {
+    await c.env.DB.batch(
+      ips.map((ip) =>
+        c.env.DB
+          .prepare("INSERT OR REPLACE INTO bans (ip, expires_at) VALUES (?, datetime('now', ?))")
+          .bind(ip, `+${ban_hours} hours`),
+      ),
+    );
+  }
+
+  return c.json({ ips });
 });
 
 export default rooms;

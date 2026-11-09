@@ -49,3 +49,22 @@ curl -X POST http://localhost:8787/news \
 curl -X DELETE http://localhost:8787/news/1 \
   -H "Authorization: Bearer $ADMIN_KEY"
 ```
+
+### See who is in a room (names + IPs)
+```bash 
+curl http://localhost:8787/rooms/1/users -H "Authorization: Bearer $ADMIN_KEY"
+```
+
+### Kick by name, ban their IP for 24h
+```bash
+curl -X POST http://localhost:8787/rooms/1/kick \
+  -H "Authorization: Bearer $ADMIN_KEY" -H "Content-Type: application/json" \
+  -d '{"username":"bob","ban_hours":24}'
+```
+
+```bash
+### Kick by IP only (no ban)
+curl -X POST http://localhost:8787/rooms/1/kick \
+  -H "Authorization: Bearer $ADMIN_KEY" -H "Content-Type: application/json" \
+  -d '{"ip":"1.2.3.4"}'
+```

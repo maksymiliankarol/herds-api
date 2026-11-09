@@ -20,6 +20,13 @@ chat.get(
     }
 
     const { id } = c.req.valid("param");
+    const ip = c.req.header("cf-connecting-ip") ?? "unknown";
+
+    const banned = await c.env.DB
+      .prepare("SELECT 1 FROM bans WHERE ip = ? AND expires_at > datetime('now')")
+      .bind(ip)
+      .first();
+    if (banned) return c.json({ error: "Banned" }, 403);
 
     // Only rooms that exist in D1 get a Durable Object
     const room = await c.env.DB.prepare("SELECT id FROM rooms WHERE id = ?").bind(id).first();
