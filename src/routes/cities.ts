@@ -18,6 +18,18 @@ cities.get("/", vValidator("query", CitySearchSchema), async (c) => {
   return c.json(results);
 });
 
+cities.get("/:id", vValidator("param", IdParamSchema), async (c) => {
+  const { id } = c.req.valid("param");
+
+  const city = await c.env.DB
+    .prepare("SELECT id, title, country_code FROM cities WHERE id = ?")
+    .bind(id)
+    .first();
+  if (!city) return c.json({ error: "Not found" }, 404);
+
+  return c.json(city);
+});
+
 cities.post("/", admin, vValidator("json", CitySchema), async (c) => {
   const { title, search, country_code } = c.req.valid("json");
 
