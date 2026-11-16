@@ -5,7 +5,6 @@ import { admin } from "../middleware/admin";
 
 const cities = new Hono<{ Bindings: CloudflareBindings }>();
 
-// Is it correct and efficient?
 cities.get("/", vValidator("query", CitySearchSchema), async (c) => {
   const { q } = c.req.valid("query");
   const like = `%${q}%`;

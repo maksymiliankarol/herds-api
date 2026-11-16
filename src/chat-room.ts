@@ -35,9 +35,9 @@ export class ChatRoom extends DurableObject<CloudflareBindings> {
     const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
     const sockets = this.open().map((ws) => this.attachment(ws));
 
-    if (sockets.length >= MAX_PER_ROOM) return this.reject(4503, "Room is full");
-    if (sockets.filter((s) => s.ip === ip).length >= MAX_PER_IP) return this.reject(4290, "Too many connections");
-    if (sockets.some((s) => s.username.toLowerCase() === username.toLowerCase())) return this.reject(4009, "Username taken");
+    if (sockets.length >= MAX_PER_ROOM) return this.reject("Room is full");
+    if (sockets.filter((s) => s.ip === ip).length >= MAX_PER_IP) return this.reject("Too many connections");
+  if (sockets.some((s) => s.username.toLowerCase() === username.toLowerCase())) return this.reject("Username taken", 4009);
 
     const { 0: client, 1: server } = new WebSocketPair();
     this.ctx.acceptWebSocket(server);
@@ -71,7 +71,7 @@ export class ChatRoom extends DurableObject<CloudflareBindings> {
 
       if (sameIp || sameName) {
         ips.add(s.ip);
-        ws.close(4403, "Removed by moderator");
+        ws.close(1008, "Removed by moderator");
       }
     }
 
@@ -149,7 +149,7 @@ export class ChatRoom extends DurableObject<CloudflareBindings> {
 
   // Browsers can't read the status of a failed WebSocket handshake,
   // so we accept the connection and close it with a custom code (4000-4999)
-  private reject(code: number, reason: string) {
+  private reject(reason: string, code = 1008) {
     const { 0: client, 1: server } = new WebSocketPair();
     server.accept();
     server.close(code, reason);

@@ -1,22 +1,27 @@
-import * as v from "valibot"
+import * as v from "valibot";
 
 const RESERVED_USERNAMES = [
-  "admin", "administrator", "mod", "moderator", "system", 
-  "support", "staff", "root", "herds", "server", "null", 
-  "undefined"
+  "admin", "administrator", "mod", "moderator", "system",
+  "support", "staff", "root", "herds", "server", "null",
+  "undefined",
 ];
 
-const Id = v.pipe(v.string(), v.regex(/^\d+$/, "Invalid id"), v.transform(Number));
+const Text = (max: number) => v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(max));
+const PositiveInt = v.pipe(v.number(), v.integer(), v.minValue(1));
+const Id = v.pipe(v.string(), v.regex(/^[1-9][0-9]{0,9}$/, "Invalid id"), v.transform(Number));
 
 export const CitySchema = v.object({
-  title: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)),
-  search: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.minLength(1), v.maxLength(100)),
+  title: Text(100),
+  search: v.pipe(Text(100), v.toLowerCase()),
   country_code: v.pipe(v.string(), v.trim(), v.toUpperCase(), v.regex(/^[A-Z]{2}$/, "Invalid country code")),
 });
 
-export const RoomSchema = v.object({
-  title: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)),
-  city_id: v.pipe(v.number(), v.integer(), v.minValue(1)),
+export const RoomSchema = v.object({ title: Text(100), city_id: PositiveInt });
+
+export const NewsSchema = v.object({
+  title: Text(200),
+  content: Text(5000),
+  room_id: PositiveInt,
 });
 
 export const UsernameSchema = v.object({
@@ -27,21 +32,6 @@ export const UsernameSchema = v.object({
   ),
 });
 
-export const MessageSchema = v.pipe(v.string(), v.trim(), v.minLength(1), v.maxBytes(2000));
-export const IdParamSchema = v.object({ id: Id });
-export const RoomsQuerySchema = v.object({ city_id: Id });
-export const CitySearchSchema = v.object({
-  q: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)),
-});
-
-export const NewsSchema = v.object({
-  title: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(200)),
-  content: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(5000)),
-  room_id: v.pipe(v.number(), v.integer(), v.minValue(1)),
-});
-
-export const NewsQuerySchema = v.object({ room_id: Id });
-
 export const KickSchema = v.pipe(
   v.object({
     username: v.optional(v.string()),
@@ -50,3 +40,9 @@ export const KickSchema = v.pipe(
   }),
   v.check((k) => Boolean(k.username || k.ip), "username or ip required"),
 );
+
+export const MessageSchema = v.pipe(v.string(), v.trim(), v.minLength(1), v.maxBytes(2000));
+export const IdParamSchema = v.object({ id: Id });
+export const RoomsQuerySchema = v.object({ city_id: Id });
+export const NewsQuerySchema = v.object({ room_id: Id });
+export const CitySearchSchema = v.object({ q: Text(100) });
