@@ -33,11 +33,20 @@ export class ChatRoom extends DurableObject<CloudflareBindings> {
   async fetch(request: Request) {
     const username = new URL(request.url).searchParams.get("username")!;
     const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
+
+    // Same person reconnecting (refresh, dropped network, StrictMode): replace the old socket
+    for (const ws of this.open()) {
+      const s = this.attachment(ws);
+      if (s.ip === ip && s.username.toLowerCase() === username.toLowerCase()) {
+        ws.close(1000, "Opened elsewhere");
+      }
+    }
+
     const sockets = this.open().map((ws) => this.attachment(ws));
 
     if (sockets.length >= MAX_PER_ROOM) return this.reject("Room is full");
     if (sockets.filter((s) => s.ip === ip).length >= MAX_PER_IP) return this.reject("Too many connections");
-  if (sockets.some((s) => s.username.toLowerCase() === username.toLowerCase())) return this.reject("Username taken", 4009);
+    if (sockets.some((s) => s.username.toLowerCase() === username.toLowerCase())) return this.reject("Username taken", 4009);
 
     const { 0: client, 1: server } = new WebSocketPair();
     this.ctx.acceptWebSocket(server);

@@ -21,6 +21,22 @@ rooms.get("/", vValidator("query", RoomsQuerySchema), async (c) => {
   return c.json(results);
 });
 
+rooms.get("/:id", vValidator("param", IdParamSchema), async (c) => {
+  const { id } = c.req.valid("param");
+
+  const room = await c.env.DB
+    .prepare(
+      `SELECT rooms.id, rooms.title, rooms.city_id, cities.title AS city_title
+       FROM rooms JOIN cities ON cities.id = rooms.city_id
+       WHERE rooms.id = ?`,
+    )
+    .bind(id)
+    .first();
+  if (!room) return c.json({ error: "Not found" }, 404);
+
+  return c.json(room);
+});
+
 // Admin
 
 rooms.post("/", admin, vValidator("json", RoomSchema), async (c) => {
