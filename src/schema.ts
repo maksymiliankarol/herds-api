@@ -19,10 +19,23 @@ export const CitySchema = v.object({
 export const RoomSchema = v.object({ title: Text(100), city_id: PositiveInt });
 
 export const NewsSchema = v.object({
-  title: Text(200),
   content: Text(5000),
   room_id: PositiveInt,
 });
+
+// Accepts an ISO timestamp with a zone (e.g. 2026-11-20T09:00:00Z or ...+01:00)
+// and stores it as UTC "YYYY-MM-DD HH:MM:SS", the same format as CURRENT_TIMESTAMP
+const PublishAt = v.pipe(
+  v.string(),
+  v.isoTimestamp(),
+  v.transform((s) => new Date(s)),
+  v.check((d) => !Number.isNaN(d.getTime()), "Invalid date"),
+  v.check((d) => d.getTime() >= Date.now(), "publish_at must be in the future"),
+  v.check((d) => d.getTime() <= Date.now() + 90 * 24 * 60 * 60 * 1000, "publish_at must be within 90 days"),
+  v.transform((d) => d.toISOString().slice(0, 19).replace("T", " ")),
+);
+
+export const NewsQueueSchema = v.object({ ...NewsSchema.entries, publish_at: PublishAt });
 
 export const UsernameSchema = v.object({
   username: v.pipe(

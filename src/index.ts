@@ -6,6 +6,9 @@ import cities from "./routes/cities";
 import rooms from "./routes/rooms";
 import chat from "./routes/chat";
 import news from "./routes/news";
+import ads from "./routes/ads";
+import stripe from "./routes/stripe";
+import { runCron } from "./cron";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
@@ -13,6 +16,8 @@ app.onError((e, c) => {
   console.error(e);
   return c.json({ error: "Internal error" }, 500);
 });
+
+app.route("/stripe", stripe);
 
 app.use(
   "/*",
@@ -29,6 +34,12 @@ app.route("/cities", cities);
 app.route("/rooms", rooms);
 app.route("/chat", chat);
 app.route("/news", news);
+app.route("/ads", ads);
 
 export { ChatRoom } from "./chat-room";
-export default app;
+export default {
+  fetch: app.fetch,
+  async scheduled(_controller, env) {
+    await runCron(env);
+  },
+} satisfies ExportedHandler<CloudflareBindings>;

@@ -78,7 +78,7 @@ curl -X DELETE http://localhost:8787/rooms/1 \
 curl -X POST http://localhost:8787/news \
   -H "Authorization: Bearer $ADMIN_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"title":"Road closed","content":"Main street closed until Friday.","room_id":1}'
+  -d '{"content":"Main street closed until Friday.","room_id":1}'
 ```
 
 ### Deleting a news
@@ -105,4 +105,10 @@ curl -X POST http://localhost:8787/rooms/1/kick \
 curl -X POST http://localhost:8787/rooms/1/kick \
   -H "Authorization: Bearer $ADMIN_KEY" -H "Content-Type: application/json" \
   -d '{"ip":"1.2.3.4"}'
+```
+
+# Stripe
+
+```bash
+  stripe listen --forward-to localhost:8787/ads/webhook
 ```

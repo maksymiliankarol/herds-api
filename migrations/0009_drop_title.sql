@@ -1,0 +1,3 @@
+ALTER TABLE news DROP COLUMN title;
+ALTER TABLE news_queue DROP COLUMN title;
+ALTER TABLE ad_orders DROP COLUMN title;

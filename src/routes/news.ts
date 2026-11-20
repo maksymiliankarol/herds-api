@@ -9,7 +9,7 @@ news.get("/", vValidator("query", NewsQuerySchema), async (c) => {
   const { room_id } = c.req.valid("query");
 
   const { results } = await c.env.DB
-    .prepare("SELECT id, title, content, created_at FROM news WHERE room_id = ? ORDER BY created_at DESC, id DESC LIMIT 10")
+    .prepare("SELECT id, content, created_at FROM news WHERE room_id = ? ORDER BY created_at DESC, id DESC LIMIT 10")
     .bind(room_id)
     .all();
 
@@ -17,12 +17,12 @@ news.get("/", vValidator("query", NewsQuerySchema), async (c) => {
 });
 
 news.post("/", admin, vValidator("json", NewsSchema), async (c) => {
-  const { title, content, room_id } = c.req.valid("json");
+  const { content, room_id } = c.req.valid("json");
 
   try {
     const row = await c.env.DB
-      .prepare("INSERT INTO news (title, content, room_id) VALUES (?, ?, ?) RETURNING *")
-      .bind(title, content, room_id)
+      .prepare("INSERT INTO news (content, room_id) VALUES (?, ?) RETURNING *")
+      .bind(content, room_id)
       .first();
     return c.json(row, 201);
   } catch (e) {
