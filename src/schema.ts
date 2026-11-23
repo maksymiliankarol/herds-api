@@ -6,7 +6,8 @@ const RESERVED_USERNAMES = [
   "undefined",
 ];
 
-const Text = (max: number) => v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(max));
+const Text = (max: number, min = 1) => 
+  v.pipe(v.string(), v.trim(), v.minLength(min), v.maxLength(max));
 const PositiveInt = v.pipe(v.number(), v.integer(), v.minValue(1));
 const Id = v.pipe(v.string(), v.regex(/^[1-9][0-9]{0,9}$/, "Invalid id"), v.transform(Number));
 
@@ -19,7 +20,7 @@ export const CitySchema = v.object({
 export const RoomSchema = v.object({ title: Text(100), city_id: PositiveInt });
 
 export const NewsSchema = v.object({
-  content: Text(5000),
+  content: Text(500, 20),
   room_id: PositiveInt,
 });
 

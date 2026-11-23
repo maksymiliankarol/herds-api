@@ -1,3 +1,5 @@
+import { AD_LIFETIME_DAYS } from "./config";
+
 const toSql = (d: Date) => d.toISOString().slice(0, 19).replace("T", " ");
 
 // Moves due items from news_queue to news in one transaction
@@ -21,7 +23,9 @@ async function cleanup(env: CloudflareBindings) {
   await env.DB.batch([
     // Unpaid orders only; paid ones are kept as the Stripe record
     env.DB.prepare("DELETE FROM ad_orders WHERE paid_at IS NULL AND created_at < datetime('now', '-2 hours')"),
-    env.DB.prepare("DELETE FROM news WHERE created_at < datetime('now', '-7 days')"),
+    env.DB
+      .prepare("DELETE FROM news WHERE created_at <= datetime('now', ?)")
+      .bind(`-${AD_LIFETIME_DAYS} days`),
   ]);
 }
 

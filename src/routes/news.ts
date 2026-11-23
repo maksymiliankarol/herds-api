@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { vValidator } from "@hono/valibot-validator";
+import { NEWS_FEED_LIMIT } from "../config";
 import { NewsSchema, NewsQuerySchema, IdParamSchema } from "../schema";
 import { admin } from "../middleware/admin";
 
@@ -9,8 +10,8 @@ news.get("/", vValidator("query", NewsQuerySchema), async (c) => {
   const { room_id } = c.req.valid("query");
 
   const { results } = await c.env.DB
-    .prepare("SELECT id, content, created_at FROM news WHERE room_id = ? ORDER BY created_at DESC, id DESC LIMIT 10")
-    .bind(room_id)
+    .prepare("SELECT id, content, created_at FROM news WHERE room_id = ? ORDER BY created_at DESC, id DESC LIMIT ?")
+    .bind(room_id, NEWS_FEED_LIMIT)
     .all();
 
   return c.json(results);
