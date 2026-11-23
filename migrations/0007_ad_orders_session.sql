@@ -1,1 +1,0 @@
-ALTER TABLE ad_orders ADD COLUMN stripe_session_id TEXT;

@@ -1,8 +1,0 @@
-CREATE TABLE ad_orders (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  title      TEXT NOT NULL,
-  content    TEXT NOT NULL,
-  room_id    INTEGER NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
-  publish_at TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);

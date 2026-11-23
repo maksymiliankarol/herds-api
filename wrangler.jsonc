@@ -16,7 +16,7 @@
 		{
 			"binding": "DB",
 			"database_name": "herds-db",
-			"database_id": "cc9a162a-ff2c-4d77-8ff3-e2daeec48c74"
+			"database_id": "c74b07b6-33cf-4ac3-af71-b963119e1dd4"
 		}
 	],
 	"durable_objects": {
@@ -46,6 +46,8 @@
 		}
 	],
 	"triggers": {
-		"crons": ["*/30 * * * *"]
+		"crons": [
+			"*/30 * * * *"
+		]
 	}
 }

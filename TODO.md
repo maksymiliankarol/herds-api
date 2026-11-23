@@ -1,5 +1,3 @@
-# todo
+# TODO
 
-- Dead connections. There’s no ping or heartbeat, so a client that drops silently keeps its slot until the connection times out. Cloudflare’s ctx.setWebSocketAutoResponse can handle that cheaply.
-
-- Cron job for deleting old news. Each should have 7 days lifetime.
+- Now same user can't enter chat on second device. Single network limit to one? If yes, let's make it like three. 

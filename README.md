@@ -24,7 +24,7 @@ each room has a name like `food`. Child room for such room would be `food_child`
 
 ### PL
 
-- ogolne
+- ogólne
 - kultura
 - imprezy
 - jedzenie
@@ -110,5 +110,5 @@ curl -X POST http://localhost:8787/rooms/1/kick \
 # Stripe
 
 ```bash
-  stripe listen --forward-to localhost:8787/ads/webhook
+  stripe listen --forward-to localhost:8787/stripe/webhook
 ```
