@@ -10,8 +10,8 @@ async function publishDueNews(env: CloudflareBindings) {
   await env.DB.batch([
     env.DB
       .prepare(
-        `INSERT INTO news (content, room_id, created_at)
-        SELECT content, room_id, publish_at FROM news_queue
+        `INSERT INTO news (content, room_id, created_at, is_ad)
+        SELECT content, room_id, publish_at, is_ad FROM news_queue
         WHERE publish_at <= ? ORDER BY publish_at, id`,
       )
       .bind(now),

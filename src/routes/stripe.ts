@@ -41,8 +41,8 @@ async function finalize(env: CloudflareBindings, session: Stripe.Checkout.Sessio
   const [insert] = await env.DB.batch([
     env.DB
       .prepare(
-        `INSERT INTO news_queue (content, room_id, publish_at)
-        SELECT content, room_id, publish_at
+        `INSERT INTO news_queue (content, room_id, publish_at, is_ad)
+        SELECT content, room_id, publish_at, 1
         FROM ad_orders WHERE id = ? AND stripe_session_id = ? AND paid_at IS NULL`
       )
       .bind(id, session.id),

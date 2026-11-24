@@ -10,7 +10,7 @@ news.get("/", vValidator("query", NewsQuerySchema), async (c) => {
   const { room_id } = c.req.valid("query");
 
   const { results } = await c.env.DB
-    .prepare("SELECT id, content, created_at FROM news WHERE room_id = ? ORDER BY created_at DESC, id DESC LIMIT ?")
+    .prepare("SELECT id, content, is_ad, created_at FROM news WHERE room_id = ? ORDER BY created_at DESC, id DESC LIMIT ?")
     .bind(room_id, NEWS_FEED_LIMIT)
     .all();
 
@@ -22,7 +22,7 @@ news.post("/", admin, vValidator("json", NewsSchema), async (c) => {
 
   try {
     const row = await c.env.DB
-      .prepare("INSERT INTO news (content, room_id) VALUES (?, ?) RETURNING *")
+      .prepare("INSERT INTO news (content, room_id, is_ad) VALUES (?, ?, 0) RETURNING *")
       .bind(content, room_id)
       .first();
     return c.json(row, 201);
