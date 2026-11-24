@@ -4,7 +4,8 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2026-11-03",
 	"vars": {
-		"WEB_URL": "https://herds.metalogrom.com"
+		"WEB_URL": "https://herds.metalogrom.com",
+		"WEB_URL_ADS": "https://herds-ads.metalogrom.com"
 	},
 	"routes": [
 		{

@@ -69,8 +69,8 @@ ads.post(
         ],
         client_reference_id: String(id),
         expires_at: Math.floor(Date.now() / 1000) + SESSION_MINUTES * 60,
-        success_url: `${c.env.WEB_URL}/success`,
-        cancel_url: `${c.env.WEB_URL}/success?cancelled=1`,
+        success_url: `${c.env.WEB_URL_ADS}/success`,
+        cancel_url: `${c.env.WEB_URL_ADS}/success?cancelled=1`,
       });
 
       await c.env.DB
