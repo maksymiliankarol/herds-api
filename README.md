@@ -4,40 +4,6 @@
 
 each room has a name like `food`. Child room for such room would be `food_child`. So `_` is a separator that makes a child. Also ui would show `Food` and `Child` (not `Food Child` child). 
 
-## Rooms tree starting point
-
-### EN
-
-- general
-- culture
-- nightlife
-- food
-- sport
-- beauty
-- health
-- housing
-- jobs
-- transport
-- city
-- recommendations
-- hobbies
-
-### PL
-
-- ogólne
-- kultura
-- imprezy
-- jedzenie
-- sport
-- uroda
-- zdrowie
-- mieszkanie
-- praca
-- komunikacja
-- miasto
-- polecajki
-- hobby
-
 ## Admin 
 
 ### Create city

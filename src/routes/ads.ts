@@ -3,7 +3,7 @@ import { vValidator } from "@hono/valibot-validator";
 import { ADS_PER_DAY } from "../config";
 import { NewsQuerySchema, NewsQueueSchema } from "../schema";
 import { getStripe } from "../lib/stripe";
-import { AD_PRICE } from "../lib/pricing";
+import { getAdPrice } from "../lib/pricing";
 
 // Stripe wants a session to live at least 30 min, so keep a margin
 const SESSION_MINUTES = 31;
@@ -26,6 +26,16 @@ ads.get("/availability", vValidator("query", NewsQuerySchema), async (c) => {
   return c.json(results.map((r) => r.day));
 });
 
+// Price of an ad in this room (depends on the country of the room's city)
+ads.get("/price", vValidator("query", NewsQuerySchema), async (c) => {
+  const { room_id } = c.req.valid("query");
+
+  const price = await getAdPrice(c.env.DB, room_id);
+  if (!price) return c.json({ error: "Room not found" }, 404);
+
+  return c.json(price);
+});
+
 ads.post(
   "/",
   vValidator("json", NewsQueueSchema, (result, c) => {
@@ -33,6 +43,10 @@ ads.post(
   }),
   async (c) => {
     const { content, room_id, publish_at } = c.req.valid("json");
+
+    // The price comes from the room, never from the client
+    const price = await getAdPrice(c.env.DB, room_id);
+    if (!price) return c.json({ error: "Room not found" }, 404);
 
     // 1. Store the ad as an unpaid order, unless the day is already full
     let id: number;
@@ -57,11 +71,13 @@ ads.post(
     try {
       const session = await getStripe(c.env).checkout.sessions.create({
         mode: "payment",
+        // Charge exactly the price the site showed, with no automatic conversion
+        adaptive_pricing: { enabled: false },
         line_items: [
           {
             price_data: {
-              currency: AD_PRICE.currency,
-              unit_amount: AD_PRICE.amount,
+              currency: price.currency,
+              unit_amount: price.amount,
               product_data: { name: "Herds ad" },
             },
             quantity: 1,
