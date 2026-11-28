@@ -62,22 +62,15 @@ rooms.post("/", admin, vValidator("json", RoomSchema), async (c) => {
 rooms.delete("/:id", admin, vValidator("param", IdParamSchema), async (c) => {
   const { id } = c.req.valid("param");
 
-  try {
-    const { meta } = await c.env.DB
-      .prepare("DELETE FROM rooms WHERE id = ?")
-      .bind(id)
-      .run();
-    if (meta.changes === 0) return c.json({ error: "Not found" }, 404);
+  const { meta } = await c.env.DB
+    .prepare("DELETE FROM rooms WHERE id = ?")
+    .bind(id)
+    .run();
+  if (meta.changes === 0) return c.json({ error: "Not found" }, 404);
 
-    await roomStub(c.env, id).destroy();
+  await roomStub(c.env, id).destroy();
 
-    return c.body(null, 204);
-  } catch (e) {
-    if (String(e).includes("FOREIGN KEY")) {
-      return c.json({ error: "Room still has news" }, 409);
-    }
-    throw e;
-  }
+  return c.body(null, 204);
 });
 
 rooms.get("/:id/users", admin, vValidator("param", IdParamSchema), async (c) => {

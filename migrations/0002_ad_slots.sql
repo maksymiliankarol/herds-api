@@ -1,1 +1,0 @@
-CREATE INDEX idx_ad_orders_slot ON ad_orders(room_id, publish_at);

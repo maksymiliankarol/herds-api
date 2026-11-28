@@ -5,7 +5,6 @@ import { rateLimit } from "./middleware/rate-limit";
 import cities from "./routes/cities";
 import rooms from "./routes/rooms";
 import chat from "./routes/chat";
-import news from "./routes/news";
 import ads from "./routes/ads";
 import stripe from "./routes/stripe";
 import { runCron } from "./cron";
@@ -33,7 +32,6 @@ app.use(
 app.route("/cities", cities);
 app.route("/rooms", rooms);
 app.route("/chat", chat);
-app.route("/news", news);
 app.route("/ads", ads);
 
 export { ChatRoom } from "./chat-room";

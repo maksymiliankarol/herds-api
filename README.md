@@ -1,80 +1,49 @@
 # herds-api
 
-## Rooms tree logic
+Cloudflare Worker (Hono, D1, Durable Objects) for Herds: cities, rooms, live chat, news and paid ads.
 
-each room has a name like `food`. Child room for such room would be `food_child`. So `_` is a separator that makes a child. Also ui would show `Food` and `Child` (not `Food Child` child). 
+Admin tasks (cities, rooms, news, kicking users) are done with `herds-admin`.
 
-## Admin 
-
-### Create city
+## Setup
 
 ```bash
-curl -X POST http://localhost:8787/cities \
-  -H "Authorization: Bearer $ADMIN_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Kraków","search":"krakow","country_code":"pl"}'
+pnpm install
 ```
 
-### Delete city
+`.dev.vars`:
+
+```
+ADMIN_KEY=...
+STRIPE_SECRET_KEY=...
+STRIPE_WEBHOOK_SECRET=...
+```
+
+For production, set the same values as secrets with `wrangler secret put <NAME>`.
+
+## Commands
 
 ```bash
-curl -X DELETE http://localhost:8787/cities/1 \
-  -H "Authorization: Bearer $ADMIN_KEY"
+pnpm dev           # run locally at http://localhost:8787
+pnpm deploy        # deploy to Cloudflare
+pnpm cf-typegen    # regenerate CloudflareBindings types after changing wrangler.jsonc
 ```
 
-### Create room
+Migrations:
 
 ```bash
-curl -X POST http://localhost:8787/rooms \
-  -H "Authorization: Bearer $ADMIN_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Neighbourhood chat","city_id":1}'
-```
-
-### Delete room
-
-```bash
-curl -X DELETE http://localhost:8787/rooms/1 \
-  -H "Authorization: Bearer $ADMIN_KEY"
-```
-
-### Create a news
-
-```bash
-curl -X POST http://localhost:8787/news \
-  -H "Authorization: Bearer $ADMIN_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"content":"Main street closed until Friday.","room_id":1}'
-```
-
-### Deleting a news
-
-```bash
-curl -X DELETE http://localhost:8787/news/1 \
-  -H "Authorization: Bearer $ADMIN_KEY"
-```
-
-### See who is in a room (names + IPs)
-```bash 
-curl http://localhost:8787/rooms/1/users -H "Authorization: Bearer $ADMIN_KEY"
-```
-
-### Kick by name, ban their IP for 24h
-```bash
-curl -X POST http://localhost:8787/rooms/1/kick \
-  -H "Authorization: Bearer $ADMIN_KEY" -H "Content-Type: application/json" \
-  -d '{"username":"bob","ban_hours":24}'
+wrangler d1 migrations apply herds-db --local
 ```
 
 ```bash
-### Kick by IP only (no ban)
-curl -X POST http://localhost:8787/rooms/1/kick \
-  -H "Authorization: Bearer $ADMIN_KEY" -H "Content-Type: application/json" \
-  -d '{"ip":"1.2.3.4"}'
+wrangler d1 migrations apply herds-db --remote
 ```
 
-# Stripe
+Forward Stripe webhooks to the local server:
 
 ```bash
-  stripe listen --forward-to localhost:8787/stripe/webhook
+stripe listen --forward-to localhost:8787/stripe/webhook
 ```
+
+## Rooms tree
+
+A room name like `food` can have children, e.g. `food_child`. The `_` is the separator that makes a child. The UI shows them as `Food` and `Child`.
